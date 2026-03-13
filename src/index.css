@@ -642,21 +642,52 @@ body::before {
   letter-spacing: 0.06em;
 }
 
-/* --- Responsive --- */
-@media (max-width: 640px) {
-  .app {
-    padding: var(--space-md);
-  }
+/* --- Export Controls --- */
+.export-controls {
+  margin-top: var(--space-xl);
+}
 
-  .header__title {
-    font-size: 1.75rem;
-  }
+.export-actions {
+  display: flex;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
 
-  .url-input__field-wrapper {
-    flex-direction: column;
-  }
+.export-btn {
+  flex: 1;
+  min-width: 200px;
+  justify-content: center;
+}
 
-  .summary-bar {
-    gap: var(--space-md);
-  }
+.export-btn--drive {
+  background: var(--bg-glass);
+  border: 1px solid var(--border-accent);
+  color: var(--accent-purple);
+}
+
+.export-btn--drive:hover {
+  background: rgba(167, 139, 250, 0.1);
+  border-color: var(--accent-purple);
+}
+
+.export-status {
+  margin-top: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-align: center;
+  animation: fadeSlideUp 0.3s ease-out;
+}
+
+.export-status--success {
+  background: rgba(52, 211, 153, 0.1);
+  color: var(--accent-emerald);
+  border: 1px solid rgba(52, 211, 153, 0.2);
+}
+
+.export-status--error {
+  background: rgba(251, 113, 133, 0.1);
+  color: var(--accent-rose);
+  border: 1px solid rgba(251, 113, 133, 0.2);
 }

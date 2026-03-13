@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import { readFileSync, existsSync } from 'fs'
+import { readFileSync, existsSync, writeFileSync, mkdirSync } from 'fs'
 import { resolve } from 'path'
 
 function loadEnvKey() {
@@ -15,6 +15,38 @@ function geminiProxy() {
   return {
     name: 'gemini-proxy',
     configureServer(server) {
+      // Export API (local only)
+      server.middlewares.use('/api/export', async (req, res) => {
+        if (req.method !== 'POST') {
+          res.statusCode = 405;
+          res.end('Method Not Allowed');
+          return;
+        }
+
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        req.on('end', async () => {
+          try {
+            const { filename, content } = JSON.parse(body);
+            const drivePath = 'G:\\My Drive\\Research Reports';
+            
+            if (!existsSync(drivePath)) {
+              mkdirSync(drivePath, { recursive: true });
+            }
+
+            const fullPath = resolve(drivePath, filename);
+            writeFileSync(fullPath, content);
+
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ success: true, path: fullPath }));
+          } catch (err) {
+            res.statusCode = 500;
+            res.end(JSON.stringify({ error: err.message }));
+          }
+        });
+      });
+
+      // Gemini Proxy
       server.middlewares.use('/api/gemini', async (req, res) => {
         if (req.method === 'GET') {
           const key = loadEnvKey();

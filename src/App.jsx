@@ -6,6 +6,7 @@ import StepsList from './components/StepsList';
 import ResourcesList from './components/ResourcesList';
 import LoadingState from './components/LoadingState';
 import SummaryBar from './components/SummaryBar';
+import ReportExport from './components/ReportExport';
 import { analyzeVideo, extractVideoId, getVideoMeta, checkApiKey } from './api/gemini';
 
 export default function App() {
@@ -111,6 +112,7 @@ export default function App() {
             authors={results.authors}
             resources={results.resources}
           />
+          <ReportExport results={results} videoMeta={videoMeta} />
         </>
       )}
     </div>
