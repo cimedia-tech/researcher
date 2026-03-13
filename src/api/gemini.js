@@ -139,17 +139,58 @@ export async function analyzeVideo(videoUrl) {
     throw new Error(data.error.message || 'Gemini API error');
   }
 
-  // Extract the text content from Gemini response
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) {
-    throw new Error('No response from AI. The video may be too long or unavailable.');
+  // Check for blocked content or safety filters
+  const candidate = data.candidates?.[0];
+  if (!candidate) {
+    const blockReason = data.promptFeedback?.blockReason;
+    if (blockReason) {
+      throw new Error(`Content blocked by safety filter: ${blockReason}`);
+    }
+    throw new Error('No response from AI. The video may be unavailable or unsupported.');
   }
 
-  try {
-    // Clean up potential markdown code fences
-    const cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
-    return JSON.parse(cleaned);
-  } catch {
-    throw new Error('Failed to parse AI response. Please try again.');
+  if (candidate.finishReason === 'SAFETY') {
+    throw new Error('Response blocked by safety filters. Try a different video.');
   }
+
+  // Extract the text content from Gemini response
+  const text = candidate.content?.parts?.[0]?.text;
+  if (!text) {
+    throw new Error('Empty response from AI. The video may be too long or unavailable.');
+  }
+
+  // Try multiple parsing strategies
+  return parseJsonResponse(text);
+}
+
+/**
+ * Robustly parse JSON from an AI response that may contain extra text
+ */
+function parseJsonResponse(text) {
+  // Strategy 1: Direct parse (works if responseMimeType is respected)
+  try {
+    return JSON.parse(text);
+  } catch { /* continue */ }
+
+  // Strategy 2: Strip markdown code fences
+  const fenceStripped = text
+    .replace(/^```(?:json)?\s*\n?/gm, '')
+    .replace(/\n?```\s*$/gm, '')
+    .trim();
+  try {
+    return JSON.parse(fenceStripped);
+  } catch { /* continue */ }
+
+  // Strategy 3: Find the first { ... } JSON object in the text
+  const firstBrace = text.indexOf('{');
+  const lastBrace = text.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace > firstBrace) {
+    try {
+      return JSON.parse(text.slice(firstBrace, lastBrace + 1));
+    } catch { /* continue */ }
+  }
+
+  // All strategies failed — show a snippet of the raw response for debugging
+  const preview = text.substring(0, 200).replace(/\n/g, ' ');
+  throw new Error(`Failed to parse AI response. Raw preview: "${preview}..."`);
 }
